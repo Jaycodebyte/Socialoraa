@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Zap,
   Send,
@@ -45,11 +45,15 @@ export default function PostGenerator() {
   const [activePlatform, setActivePlatform] = useUserPersistentState(userStateKey, "post-generator:active-platform", "linkedin");
   const [useWebSearch, setUseWebSearch] = useUserPersistentState(userStateKey, "post-generator:web-search", false);
   const [sources, setSources] = useUserPersistentState(userStateKey, "post-generator:sources", []);
-  const { task, runTask } = useBackgroundTask("post-generator");
+  const { task, runTask, clearTask } = useBackgroundTask("post-generator");
+  const handledResultRef = useRef(null);
   const loading = task.status === "running";
 
   useEffect(() => {
     if (task.status !== "success" || !task.result?.content) return;
+    if (handledResultRef.current === task.result) return;
+    handledResultRef.current = task.result;
+
     setGeneratedContent(task.result.content);
     setSources(task.result.sources || []);
     saveSchedulerDraft({
@@ -57,7 +61,8 @@ export default function PostGenerator() {
       platform: task.result.activePlatform,
       content: task.result.content?.[task.result.activePlatform] || "",
     });
-  }, [setGeneratedContent, setSources, task.result, task.status]);
+    clearTask();
+  }, [clearTask, setGeneratedContent, setSources, task.result, task.status]);
 
   const handleGenerate = async () => {
     if (!topic) return toast.error("Please enter a topic");
