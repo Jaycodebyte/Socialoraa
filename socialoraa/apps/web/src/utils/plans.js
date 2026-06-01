@@ -45,8 +45,8 @@ export const PLAN_DETAILS = {
   },
 };
 
-const SELECTED_PLAN_KEY = "socialpilot:selected-plan";
-const USAGE_KEY_PREFIX = "socialpilot:plan-usage";
+const SELECTED_PLAN_KEY = "socialoraa:selected-plan";
+const USAGE_KEY_PREFIX = "socialoraa:plan-usage";
 
 export const normalizePlan = (plan) => {
   const value = String(plan || "").trim().toLowerCase();
@@ -74,7 +74,7 @@ export const getPlanFromSearch = (search) => {
   if (!callbackUrl) return null;
 
   try {
-    const callback = new URL(callbackUrl, "https://socialpilot.local");
+    const callback = new URL(callbackUrl, "https://socialoraa.local");
     const callbackPlan = callback.searchParams.get("plan");
     return callbackPlan ? normalizePlan(callbackPlan) : null;
   } catch {

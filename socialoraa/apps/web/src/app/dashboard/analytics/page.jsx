@@ -199,7 +199,7 @@ export default function Analytics() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "socialpilot-analytics.csv";
+    link.download = "socialoraa-analytics.csv";
     link.click();
     URL.revokeObjectURL(url);
   };

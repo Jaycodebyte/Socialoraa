@@ -2,7 +2,7 @@ import supabase from "@/utils/supabase";
 
 const TABLE_NAME = "connected_platforms";
 
-const localKey = (userId) => `socialpilot-platforms:${userId || "guest"}`;
+const localKey = (userId) => `socialoraa-platforms:${userId || "guest"}`;
 
 const readLocalConnections = (userId) => {
   if (typeof window === "undefined") return [];

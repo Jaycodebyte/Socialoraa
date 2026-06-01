@@ -49,7 +49,7 @@ const isInvalidTokenError = (data) => {
 };
 
 const uploadVideo = async ({ accessToken, file, metadata }) => {
-  const boundary = `socialpilot-${crypto.randomUUID()}`;
+  const boundary = `socialoraa-${crypto.randomUUID()}`;
   const metadataPart = JSON.stringify({
     snippet: {
       title: metadata.title,

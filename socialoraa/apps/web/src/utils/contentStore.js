@@ -2,7 +2,7 @@ import supabase from "@/utils/supabase";
 
 const TABLE_NAME = "generated_content";
 
-const localKey = (userId) => `socialpilot-content:${userId || "guest"}`;
+const localKey = (userId) => `socialoraa-content:${userId || "guest"}`;
 
 const readLocalContent = (userId) => {
   if (typeof window === "undefined") return [];
