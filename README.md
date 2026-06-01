@@ -15,16 +15,16 @@ AI-powered social media workspace for generating posts, scripts, video shorts, s
 ## Getting Started
 
 ```bash
-npm install --prefix anything/apps/web
+npm install --prefix socialoraa/apps/web
 npm run dev
 ```
 
-The root `npm run dev` command starts the web app from `anything/apps/web`.
+The root `npm run dev` command starts the web app from `socialoraa/apps/web`.
 
 ## Environment
 
-Copy `anything/apps/web/.env.example` to `anything/apps/web/.env` and fill in the required keys for the integrations you want to test.
+Copy `socialoraa/apps/web/.env.example` to `socialoraa/apps/web/.env` and fill in the required keys for the integrations you want to test.
 
 ```bash
-cp anything/apps/web/.env.example anything/apps/web/.env
+cp socialoraa/apps/web/.env.example socialoraa/apps/web/.env
 ```

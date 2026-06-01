@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env.example
-!anything/apps/web/.env.example
+!socialoraa/apps/web/.env.example
 *.log
 
 node_modules/
@@ -12,5 +12,5 @@ build/
 .media-work/
 tmp/
 
-anything/apps/web/public/exports/
-anything/apps/web/public/uploads/
+socialoraa/apps/web/public/exports/
+socialoraa/apps/web/public/uploads/
