@@ -30,13 +30,28 @@ const isLinkedInInvalidToken = (response, data) => {
 };
 
 const getLinkedInPublishError = (response, data) => {
-  const message = String(data?.message || data?.error_description || "").trim();
+  const message = String(
+    data?.message ||
+      data?.error_description ||
+      data?.error ||
+      data?.code ||
+      "",
+  ).trim();
+
   if (/scope|permission|w_member_social|not enough permissions/i.test(message)) {
     return "LinkedIn posting permission is missing. Reconnect LinkedIn in Settings after confirming your LinkedIn app has w_member_social enabled.";
   }
 
   if (/invalid access token|expired token|token has expired|oauth/i.test(message)) {
     return "LinkedIn access expired or is invalid. Reconnect LinkedIn in Settings, then try again.";
+  }
+
+  if (response.status === 403 && message) {
+    return `LinkedIn rejected the post: ${message}`;
+  }
+
+  if (response.status === 403) {
+    return "LinkedIn rejected the post. Reconnect LinkedIn in Settings, then try again with a text-only post. If it still fails, your LinkedIn app/token may not have publishing access for this member.";
   }
 
   return message || `LinkedIn rejected the post with status ${response.status}.`;

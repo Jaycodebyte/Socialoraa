@@ -58,6 +58,12 @@ export async function savePlatformConnection(userId, input) {
     updated_at: now,
   };
 
+  await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .eq("user_id", userId)
+    .eq("platform", input.platform);
+
   let { data, error } = await supabase
     .from(TABLE_NAME)
     .upsert(connection, { onConflict: "user_id,platform,external_account_id" })
@@ -80,11 +86,7 @@ export async function savePlatformConnection(userId, input) {
   if (!error) return data;
 
   const existing = readLocalConnections(userId).filter(
-    (item) =>
-      !(
-        item.platform === connection.platform &&
-        item.external_account_id === connection.external_account_id
-      ),
+    (item) => item.platform !== connection.platform,
   );
   const localConnection = { ...connection, id: newId() };
   writeLocalConnections(userId, [localConnection, ...existing]);
