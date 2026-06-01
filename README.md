@@ -12,6 +12,28 @@ The product is built as a full-stack React Router application with server-side A
 - Analytics views for reach, content activity, channel metrics, and top-performing content.
 - Billing-ready structure with Stripe and Razorpay integration points.
 
+## Product Screenshots
+
+### Landing Page
+
+![Socialoraa landing page](docs/assets/landing-page.png)
+
+### Feature Overview
+
+![Socialoraa features](docs/assets/features.png)
+
+### Creator Dashboard
+
+![Socialoraa dashboard](docs/assets/dashboard.png)
+
+### Performance Analytics
+
+![Socialoraa analytics](docs/assets/analytics.png)
+
+### Connected Platforms
+
+![Socialoraa connected platforms](docs/assets/connected-platforms.png)
+
 ## Why It Matters
 
 Social media teams lose time switching between writing tools, scheduling tools, analytics dashboards, and platform-specific publishing flows. Socialoraa centralizes those workflows so a user can move from idea to scheduled content and performance review in one place.
