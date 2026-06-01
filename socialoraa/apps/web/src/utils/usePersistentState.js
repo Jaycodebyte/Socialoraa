@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const memory = new Map();
 
@@ -27,11 +27,19 @@ const readStoredValue = (key, fallback) => {
 };
 
 export default function usePersistentState(key, fallback) {
+  const fallbackRef = useRef(fallback);
   const [value, setValue] = useState(() => readStoredValue(key, fallback));
 
   useEffect(() => {
-    setValue(readStoredValue(key, fallback));
-  }, [fallback, key]);
+    fallbackRef.current = fallback;
+  }, [fallback]);
+
+  useEffect(() => {
+    const storedValue = readStoredValue(key, fallbackRef.current);
+    setValue((currentValue) => (
+      Object.is(currentValue, storedValue) ? currentValue : storedValue
+    ));
+  }, [key]);
 
   useEffect(() => {
     memory.set(key, value);

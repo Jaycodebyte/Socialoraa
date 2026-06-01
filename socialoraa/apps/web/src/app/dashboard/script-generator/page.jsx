@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Copy,
@@ -44,14 +44,19 @@ export default function ScriptGenerator() {
   const [script, setScript] = useUserPersistentState(userStateKey, "script-generator:script", null);
   const [useWebSearch, setUseWebSearch] = useUserPersistentState(userStateKey, "script-generator:web-search", false);
   const [sources, setSources] = useUserPersistentState(userStateKey, "script-generator:sources", []);
-  const { task, runTask } = useBackgroundTask("script-generator");
+  const { task, runTask, clearTask } = useBackgroundTask("script-generator");
+  const handledResultRef = useRef(null);
   const loading = task.status === "running";
 
   useEffect(() => {
     if (task.status !== "success" || !task.result?.script) return;
+    if (handledResultRef.current === task.result) return;
+    handledResultRef.current = task.result;
+
     setScript(task.result.script);
     setSources(task.result.sources || []);
-  }, [setScript, setSources, task.result, task.status]);
+    clearTask();
+  }, [clearTask, setScript, setSources, task.result, task.status]);
 
   const handleGenerate = async () => {
     if (!topic) return toast.error("Please enter a video topic");
