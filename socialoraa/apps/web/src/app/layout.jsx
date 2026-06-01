@@ -51,9 +51,11 @@ function ClientLayout({ children }) {
   const { data: user, loading, refetch } = useUser();
   const { signOut } = useAuth();
   const tasks = useBackgroundTasks();
-  const activeTasks = Object.values(tasks).filter((task) => (
-    task.status === "running" || task.status === "success"
+  const runningTasks = Object.values(tasks).filter((task) => task.status === "running");
+  const completedTasks = Object.values(tasks).filter((task) => (
+    task.status === "success" && task.bannerVisible
   ));
+  const bannerTask = runningTasks[0] || completedTasks[0];
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   useScheduledPublisher(user);
 
@@ -321,32 +323,32 @@ function ClientLayout({ children }) {
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:p-8">{children}</div>
       </main>
 
-      {activeTasks.length > 0 && (
+      {bannerTask && (
         <div className="fixed bottom-4 left-4 right-4 z-[60] rounded-2xl border border-blue-500/20 bg-[#101322]/95 px-4 py-3 text-sm text-blue-100 shadow-2xl shadow-blue-950/30 backdrop-blur sm:left-auto sm:right-5 sm:max-w-sm">
           <div className="flex items-center gap-3">
           <Loader2
             size={18}
-            className={activeTasks[0].status === "running" ? "animate-spin text-blue-300" : "text-emerald-300"}
+            className={bannerTask.status === "running" ? "animate-spin text-blue-300" : "text-emerald-300"}
           />
           <div className="min-w-0 flex-1">
             <p className="font-bold">
-              {activeTasks[0].status === "success" ? "Processing complete" : "Processing in background"}
+              {bannerTask.status === "success" ? "Processing complete" : "Processing in background"}
             </p>
             <p className="text-xs text-blue-100/70">
-              {activeTasks[0].message || "You can switch features safely."}
+              {bannerTask.message || "You can switch features safely."}
             </p>
           </div>
-            {typeof activeTasks[0].progress === "number" && (
+            {typeof bannerTask.progress === "number" && (
               <span className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-black text-blue-200">
-                {Math.round(activeTasks[0].progress)}%
+                {Math.round(bannerTask.progress)}%
               </span>
             )}
           </div>
-          {typeof activeTasks[0].progress === "number" && (
+          {typeof bannerTask.progress === "number" && (
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300 transition-all duration-500"
-                style={{ width: `${Math.min(Math.max(activeTasks[0].progress, 0), 100)}%` }}
+                style={{ width: `${Math.min(Math.max(bannerTask.progress, 0), 100)}%` }}
               />
             </div>
           )}

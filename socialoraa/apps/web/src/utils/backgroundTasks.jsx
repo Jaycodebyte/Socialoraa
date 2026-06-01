@@ -11,11 +11,14 @@ const initialTask = {
   result: null,
   error: null,
   promise: null,
+  completedAt: null,
+  bannerVisible: false,
 };
 
 const store = {
   tasks: {},
   timers: {},
+  successTimers: {},
   listeners: new Set(),
 };
 
@@ -56,6 +59,10 @@ const clearTask = (key) => {
     globalThis.clearInterval(store.timers[key]);
     delete store.timers[key];
   }
+  if (store.successTimers[key]) {
+    globalThis.clearTimeout(store.successTimers[key]);
+    delete store.successTimers[key];
+  }
   setTask(key, initialTask);
 };
 
@@ -63,6 +70,28 @@ const stopProgressTimer = (key) => {
   if (!store.timers[key]) return;
   globalThis.clearInterval(store.timers[key]);
   delete store.timers[key];
+};
+
+const hideCompletedBanners = () => {
+  Object.entries(store.tasks).forEach(([taskKey, task]) => {
+    if (task.status === "success" && task.bannerVisible) {
+      setTask(taskKey, { bannerVisible: false });
+    }
+  });
+};
+
+const showSuccessBriefly = (key, durationMs) => {
+  if (store.successTimers[key]) {
+    globalThis.clearTimeout(store.successTimers[key]);
+  }
+
+  store.successTimers[key] = globalThis.setTimeout(() => {
+    const task = store.tasks[key];
+    if (task?.status === "success") {
+      setTask(key, { bannerVisible: false });
+    }
+    delete store.successTimers[key];
+  }, durationMs);
 };
 
 const startProgressTimer = (key, options = {}) => {
@@ -110,6 +139,7 @@ const runTask = async (key, runner, options = {}) => {
   }
 
   const promise = (async () => {
+    hideCompletedBanners();
     setTask(key, {
       status: "running",
       message: options.message || "Processing...",
@@ -117,6 +147,8 @@ const runTask = async (key, runner, options = {}) => {
       startedAt: Date.now(),
       estimatedDurationMs: Number(options.estimatedDurationMs ?? 90000),
       error: null,
+      completedAt: null,
+      bannerVisible: true,
     });
     startProgressTimer(key, options);
 
@@ -126,6 +158,7 @@ const runTask = async (key, runner, options = {}) => {
         setMessage: (message) => setTask(key, { message }),
       });
       stopProgressTimer(key);
+      const successVisibleMs = Number(options.successVisibleMs ?? 1200);
       setTask(key, {
         status: "success",
         message: options.successMessage || "Complete",
@@ -133,7 +166,10 @@ const runTask = async (key, runner, options = {}) => {
         result,
         error: null,
         promise: null,
+        completedAt: Date.now(),
+        bannerVisible: true,
       });
+      showSuccessBriefly(key, successVisibleMs);
       return result;
     } catch (error) {
       stopProgressTimer(key);
@@ -143,6 +179,8 @@ const runTask = async (key, runner, options = {}) => {
         progress: 0,
         error,
         promise: null,
+        completedAt: null,
+        bannerVisible: false,
       });
       throw error;
     }
