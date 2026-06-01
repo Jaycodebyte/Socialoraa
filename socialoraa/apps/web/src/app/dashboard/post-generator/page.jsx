@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Zap,
   Send,
@@ -261,13 +260,8 @@ export default function PostGenerator() {
       </div>
 
       {/* Results Section */}
-      <AnimatePresence>
-        {generatedContent && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
+      {generatedContent && (
+        <div className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-bold">Generated Content</h2>
               <div className="flex flex-wrap gap-2">
@@ -404,9 +398,8 @@ export default function PostGenerator() {
                 </p>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
