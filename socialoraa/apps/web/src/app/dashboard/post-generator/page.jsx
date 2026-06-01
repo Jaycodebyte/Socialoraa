@@ -92,6 +92,10 @@ export default function PostGenerator() {
     }, {
       message: "Generating post content in the background...",
       successMessage: "Post content ready",
+      initialProgress: 8,
+      maxProgress: 96,
+      estimatedDurationMs: useWebSearch ? 24000 : 12000,
+      progressIntervalMs: 300,
     }).catch((error) => {
       console.error(error);
       toast.error(error.message || "Could not generate content. Try again.");

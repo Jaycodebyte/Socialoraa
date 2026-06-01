@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FileText,
@@ -38,13 +38,18 @@ export default function ContentWriter() {
   const userStateKey = user?.id || user?.email || "guest";
   const [content, setContent] = useUserPersistentState(userStateKey, "content-writer:content", "");
   const [results, setResults] = useUserPersistentState(userStateKey, "content-writer:results", null);
-  const { task, runTask } = useBackgroundTask("content-writer");
+  const { task, runTask, clearTask } = useBackgroundTask("content-writer");
+  const handledResultRef = useRef(null);
   const loading = task.status === "running";
 
   useEffect(() => {
     if (task.status !== "success" || !task.result?.results) return;
+    if (handledResultRef.current === task.result) return;
+    handledResultRef.current = task.result;
+
     setResults(task.result.results);
-  }, [setResults, task.result, task.status]);
+    clearTask();
+  }, [clearTask, setResults, task.result, task.status]);
 
   const handleGenerate = async () => {
     if (!content) return toast.error("Please paste your content");
@@ -68,6 +73,10 @@ export default function ContentWriter() {
     }, {
       message: "Generating descriptions in the background...",
       successMessage: "Descriptions ready",
+      initialProgress: 10,
+      maxProgress: 96,
+      estimatedDurationMs: 10000,
+      progressIntervalMs: 300,
     }).catch((error) => {
       console.error(error);
       toast.error("Could not generate. Showing demo results.");

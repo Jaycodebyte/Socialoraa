@@ -88,6 +88,10 @@ export default function ScriptGenerator() {
     }, {
       message: "Generating script in the background...",
       successMessage: "Script ready",
+      initialProgress: 8,
+      maxProgress: 96,
+      estimatedDurationMs: useWebSearch ? 28000 : 16000,
+      progressIntervalMs: 300,
     }).catch((error) => {
       console.error(error);
       toast.error("Could not generate. Showing demo script.");

@@ -60,10 +60,11 @@ const startProgressTimer = (key, options = {}) => {
 
   const maxProgress = Number(options.maxProgress ?? 94);
   const estimatedDurationMs = Number(options.estimatedDurationMs ?? 90000);
+  const initialProgress = Number(options.initialProgress ?? 6);
   const startedAt = Date.now();
 
   setTask(key, {
-    progress: Number(options.initialProgress ?? 6),
+    progress: initialProgress,
     startedAt,
     estimatedDurationMs,
   });
@@ -80,7 +81,10 @@ const startProgressTimer = (key, options = {}) => {
     const eased = 1 - Math.pow(1 - ratio, 2.8);
     const nextProgress = Math.min(
       maxProgress,
-      Math.max(task.progress || 0, Math.round(6 + eased * (maxProgress - 6))),
+      Math.max(
+        task.progress || 0,
+        Math.round(initialProgress + eased * (maxProgress - initialProgress)),
+      ),
     );
 
     if (nextProgress !== task.progress) {
