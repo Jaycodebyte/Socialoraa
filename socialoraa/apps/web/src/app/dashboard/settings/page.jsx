@@ -89,6 +89,23 @@ const SettingRow = ({ label, desc, children }) => (
   </div>
 );
 
+const getOAuthQueryParams = (platform) => {
+  if (platform.oauthProvider === "google") {
+    return {
+      access_type: "offline",
+      prompt: "select_account consent",
+    };
+  }
+
+  if (platform.oauthProvider === "facebook") {
+    return {
+      auth_type: "rerequest",
+    };
+  }
+
+  return {};
+};
+
 const PlatformBadge = ({ platform }) => {
   const config = platforms.find((item) => item.id === platform);
   const Icon = config?.icon || Globe;
@@ -491,10 +508,7 @@ export default function Settings() {
         callbackUrl: `/dashboard/settings?connectedPlatform=${platform.id}`,
         scopes: platform.scope,
         preflight: true,
-        queryParams: {
-          access_type: "offline",
-          prompt: "select_account consent",
-        },
+        queryParams: getOAuthQueryParams(platform),
       });
     } catch (error) {
       setConnectingPlatform(null);
