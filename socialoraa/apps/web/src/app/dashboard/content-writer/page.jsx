@@ -48,7 +48,8 @@ export default function ContentWriter() {
     handledResultRef.current = task.result;
 
     setResults(task.result.results);
-    clearTask();
+    const timer = globalThis.setTimeout(clearTask, 900);
+    return () => globalThis.clearTimeout(timer);
   }, [clearTask, setResults, task.result, task.status]);
 
   const handleGenerate = async () => {
@@ -57,16 +58,21 @@ export default function ContentWriter() {
     const usage = checkUsageLimit(user, "aiPosts");
     if (!usage.allowed) return toast.error(usage.message);
 
-    runTask(async () => {
+    setResults(null);
+
+    runTask(async ({ setProgress }) => {
+      setProgress(20, "Analyzing source content...");
       const response = await fetch("/api/ai/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
 
+      setProgress(84, "Creating descriptions and hashtags...");
       if (!response.ok) throw new Error("Generation failed");
 
       const data = await response.json();
+      setProgress(96, "Finalizing content pack...");
       recordUsage(user, "aiPosts");
       toast.success("Descriptions generated!");
       return { results: data.results };

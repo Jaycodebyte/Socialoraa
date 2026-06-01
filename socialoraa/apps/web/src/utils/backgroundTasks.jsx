@@ -41,6 +41,16 @@ const setTask = (key, patch) => {
   notify();
 };
 
+const updateTaskProgress = (key, progress, message) => {
+  const current = store.tasks[key];
+  if (!current || current.status !== "running") return;
+
+  setTask(key, {
+    progress: Math.min(Math.max(Number(progress), current.progress || 0), 99),
+    ...(message ? { message } : {}),
+  });
+};
+
 const clearTask = (key) => {
   if (store.timers[key]) {
     globalThis.clearInterval(store.timers[key]);
@@ -111,7 +121,10 @@ const runTask = async (key, runner, options = {}) => {
     startProgressTimer(key, options);
 
     try {
-      const result = await runner();
+      const result = await runner({
+        setProgress: (progress, message) => updateTaskProgress(key, progress, message),
+        setMessage: (message) => setTask(key, { message }),
+      });
       stopProgressTimer(key);
       setTask(key, {
         status: "success",

@@ -61,7 +61,8 @@ export default function PostGenerator() {
       platform: task.result.activePlatform,
       content: task.result.content?.[task.result.activePlatform] || "",
     });
-    clearTask();
+    const timer = globalThis.setTimeout(clearTask, 900);
+    return () => globalThis.clearTimeout(timer);
   }, [clearTask, setGeneratedContent, setSources, task.result, task.status]);
 
   const handleGenerate = async () => {
@@ -70,17 +71,23 @@ export default function PostGenerator() {
     const usage = checkUsageLimit(user, "aiPosts");
     if (!usage.allowed) return toast.error(usage.message);
 
-    runTask(async () => {
+    setGeneratedContent(null);
+    setSources([]);
+
+    runTask(async ({ setProgress }) => {
+      setProgress(18, useWebSearch ? "Searching live sources..." : "Preparing AI prompt...");
       const response = await fetch("/api/ai/generate-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, language, style, useWebSearch }),
       });
 
+      setProgress(82, "Formatting generated post pack...");
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Generation failed");
       }
+      setProgress(96, "Finalizing post content...");
       recordUsage(user, "aiPosts");
       toast.success("Content generated successfully!");
       return {

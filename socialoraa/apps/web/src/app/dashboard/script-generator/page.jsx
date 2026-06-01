@@ -55,7 +55,8 @@ export default function ScriptGenerator() {
 
     setScript(task.result.script);
     setSources(task.result.sources || []);
-    clearTask();
+    const timer = globalThis.setTimeout(clearTask, 900);
+    return () => globalThis.clearTimeout(timer);
   }, [clearTask, setScript, setSources, task.result, task.status]);
 
   const handleGenerate = async () => {
@@ -64,7 +65,11 @@ export default function ScriptGenerator() {
     const usage = checkUsageLimit(user, "aiPosts");
     if (!usage.allowed) return toast.error(usage.message);
 
-    runTask(async () => {
+    setScript(null);
+    setSources([]);
+
+    runTask(async ({ setProgress }) => {
+      setProgress(18, useWebSearch ? "Searching live script references..." : "Preparing script structure...");
       const response = await fetch("/api/ai/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,9 +81,11 @@ export default function ScriptGenerator() {
         }),
       });
 
+      setProgress(82, "Formatting script sections...");
       if (!response.ok) throw new Error("Generation failed");
 
       const data = await response.json();
+      setProgress(96, "Finalizing video script...");
       recordUsage(user, "aiPosts");
       toast.success("Script generated!");
       return {
