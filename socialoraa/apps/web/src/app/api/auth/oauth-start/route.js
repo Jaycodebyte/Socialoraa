@@ -10,6 +10,26 @@ const friendlyProviderError = (data) => {
   return message || "Could not start platform verification.";
 };
 
+const validateProviderRedirect = (location, provider) => {
+  let target;
+
+  try {
+    target = new URL(location);
+  } catch {
+    return null;
+  }
+
+  if (
+    provider === "linkedin_oidc" &&
+    target.hostname.endsWith("linkedin.com") &&
+    target.searchParams.has("redirect_to")
+  ) {
+    return "LinkedIn OAuth is not configured correctly in Supabase. Recheck the LinkedIn OIDC provider setup and make sure the LinkedIn app uses your Supabase callback URL, not the app redirect URL.";
+  }
+
+  return null;
+};
+
 const isSameOriginRedirect = (request, value) => {
   try {
     const target = new URL(value);
@@ -66,6 +86,11 @@ export async function POST(request) {
 
     const location = response.headers.get("location");
     if (response.status >= 300 && response.status < 400 && location) {
+      const redirectError = validateProviderRedirect(location, platformProvider);
+      if (redirectError) {
+        return Response.json({ error: redirectError }, { status: 400 });
+      }
+
       return Response.json({ redirectUrl: authorizeUrl.toString() });
     }
 

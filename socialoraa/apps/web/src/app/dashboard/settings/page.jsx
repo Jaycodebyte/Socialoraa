@@ -269,9 +269,8 @@ function PlatformModal({
                     {setupError.platformName} setup required
                   </div>
                   <p className="mt-1 text-sm text-amber-100/80">
-                    Enable {setupError.providerName} in Supabase Authentication
-                    Providers and add its client ID and secret before verifying
-                    ownership.
+                    {setupError.message ||
+                      `Enable ${setupError.providerName} in Supabase Authentication Providers and add its client ID and secret before verifying ownership.`}
                   </p>
                   <p className="mt-2 break-words text-xs text-amber-100/60">
                     Supabase rejected the provider before the account login could start.
@@ -518,6 +517,17 @@ export default function Settings() {
           platformName: platform.name,
           providerName:
             platform.oauthProvider === "linkedin_oidc" ? "LinkedIn OIDC" : platform.name,
+          message,
+        });
+        return;
+      }
+
+      if (/LinkedIn OAuth is not configured correctly/i.test(message)) {
+        setPlatformSetupError({
+          platformName: platform.name,
+          providerName: "LinkedIn OIDC",
+          message:
+            "LinkedIn is rejecting the connection before login starts. In Supabase, configure LinkedIn OIDC with the LinkedIn Client ID/Secret, then in LinkedIn Developer Portal add the Supabase callback URL: https://hmmmtjucypkgoaxweii.supabase.co/auth/v1/callback",
         });
         return;
       }
