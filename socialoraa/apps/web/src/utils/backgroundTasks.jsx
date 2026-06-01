@@ -5,6 +5,9 @@ const BackgroundTaskContext = createContext(null);
 const initialTask = {
   status: "idle",
   message: "",
+  progress: 0,
+  startedAt: null,
+  estimatedDurationMs: null,
   result: null,
   error: null,
   promise: null,
@@ -12,6 +15,7 @@ const initialTask = {
 
 const store = {
   tasks: {},
+  timers: {},
   listeners: new Set(),
 };
 
@@ -38,7 +42,51 @@ const setTask = (key, patch) => {
 };
 
 const clearTask = (key) => {
+  if (store.timers[key]) {
+    globalThis.clearInterval(store.timers[key]);
+    delete store.timers[key];
+  }
   setTask(key, initialTask);
+};
+
+const stopProgressTimer = (key) => {
+  if (!store.timers[key]) return;
+  globalThis.clearInterval(store.timers[key]);
+  delete store.timers[key];
+};
+
+const startProgressTimer = (key, options = {}) => {
+  stopProgressTimer(key);
+
+  const maxProgress = Number(options.maxProgress ?? 94);
+  const estimatedDurationMs = Number(options.estimatedDurationMs ?? 90000);
+  const startedAt = Date.now();
+
+  setTask(key, {
+    progress: Number(options.initialProgress ?? 6),
+    startedAt,
+    estimatedDurationMs,
+  });
+
+  store.timers[key] = globalThis.setInterval(() => {
+    const task = store.tasks[key];
+    if (!task || task.status !== "running") {
+      stopProgressTimer(key);
+      return;
+    }
+
+    const elapsed = Date.now() - startedAt;
+    const ratio = Math.min(Math.max(elapsed / estimatedDurationMs, 0), 1);
+    const eased = 1 - Math.pow(1 - ratio, 2.8);
+    const nextProgress = Math.min(
+      maxProgress,
+      Math.max(task.progress || 0, Math.round(6 + eased * (maxProgress - 6))),
+    );
+
+    if (nextProgress !== task.progress) {
+      setTask(key, { progress: nextProgress });
+    }
+  }, Number(options.progressIntervalMs ?? 900));
 };
 
 const runTask = async (key, runner, options = {}) => {
@@ -51,23 +99,31 @@ const runTask = async (key, runner, options = {}) => {
     setTask(key, {
       status: "running",
       message: options.message || "Processing...",
+      progress: Number(options.initialProgress ?? 6),
+      startedAt: Date.now(),
+      estimatedDurationMs: Number(options.estimatedDurationMs ?? 90000),
       error: null,
     });
+    startProgressTimer(key, options);
 
     try {
       const result = await runner();
+      stopProgressTimer(key);
       setTask(key, {
         status: "success",
         message: options.successMessage || "Complete",
+        progress: 100,
         result,
         error: null,
         promise: null,
       });
       return result;
     } catch (error) {
+      stopProgressTimer(key);
       setTask(key, {
         status: "error",
         message: "",
+        progress: 0,
         error,
         promise: null,
       });

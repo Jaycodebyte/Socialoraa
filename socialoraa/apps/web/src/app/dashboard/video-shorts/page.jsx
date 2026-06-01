@@ -170,41 +170,16 @@ export default function VideoShorts() {
     "balanced",
   );
   const [result, setResult] = useUserPersistentState(userStateKey, "video-shorts:result", null);
-  const [processingProgress, setProcessingProgress] = useState(0);
   const { task: videoTask, runTask, clearTask } = useBackgroundTask("video-shorts");
   const processing = videoTask.status === "running";
   const displayResult = videoTask.result || result;
   const visibleClipCount = generationMode === "auto" ? clipCount : 1;
-
-  useEffect(() => {
-    if (!processing) {
-      if (videoTask.status === "success") {
-        setProcessingProgress(100);
-        const timer = window.setTimeout(() => setProcessingProgress(0), 1400);
-        return () => window.clearTimeout(timer);
-      }
-      if (videoTask.status === "error" || videoTask.status === "idle") {
-        setProcessingProgress(0);
-      }
-      return;
-    }
-
-    setProcessingProgress((current) => Math.max(current, 8));
-    const timer = window.setInterval(() => {
-      setProcessingProgress((current) => {
-        if (current >= 94) return current;
-        const nextStep =
-          current < 25 ? 4 :
-          current < 55 ? 3 :
-          current < 78 ? 2 :
-          current < 90 ? 1 :
-          0.35;
-        return Math.min(current + nextStep, 94);
-      });
-    }, 900);
-
-    return () => window.clearInterval(timer);
-  }, [processing, videoTask.status]);
+  const processingProgress = videoTask.progress || 0;
+  const estimateProcessingTime = () => {
+    const qualityMultiplier = renderQuality === "premium" ? 1.55 : renderQuality === "fast" ? 0.72 : 1;
+    const modeMultiplier = generationMode === "manual" ? 0.82 : 1;
+    return Math.round((42000 + visibleClipCount * 26000) * qualityMultiplier * modeMultiplier);
+  };
 
   const persistShortsResult = useCallback(
     async (shortsResult) => {
@@ -320,7 +295,6 @@ export default function VideoShorts() {
     const usage = checkUsageLimit(user, "videoShorts", clipCount);
     if (!usage.allowed) return toast.error(usage.message);
 
-    setProcessingProgress(8);
     runTask(async () => {
       let response;
       if (sourceType === "upload" || musicFile) {
@@ -370,13 +344,15 @@ export default function VideoShorts() {
       if (!response.ok) {
         throw new Error(data.error || "Unable to create shorts");
       }
-      setProcessingProgress(100);
       recordUsage(user, "videoShorts", data.clips?.length || clipCount);
       toast.success("Video converted to shorts!");
       return data;
     }, {
       message: "Creating shorts in the background...",
       successMessage: "Shorts ready",
+      initialProgress: 6,
+      maxProgress: 94,
+      estimatedDurationMs: estimateProcessingTime(),
     }).catch((error) => {
       const message =
         error instanceof TypeError && error.message === "Failed to fetch"

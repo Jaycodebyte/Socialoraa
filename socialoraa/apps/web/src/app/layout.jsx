@@ -320,14 +320,29 @@ function ClientLayout({ children }) {
       </main>
 
       {runningTasks.length > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-[60] flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-[#101322]/95 px-4 py-3 text-sm text-blue-100 shadow-2xl shadow-blue-950/30 backdrop-blur sm:left-auto sm:right-5 sm:max-w-sm">
+        <div className="fixed bottom-4 left-4 right-4 z-[60] rounded-2xl border border-blue-500/20 bg-[#101322]/95 px-4 py-3 text-sm text-blue-100 shadow-2xl shadow-blue-950/30 backdrop-blur sm:left-auto sm:right-5 sm:max-w-sm">
+          <div className="flex items-center gap-3">
           <Loader2 size={18} className="animate-spin text-blue-300" />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="font-bold">Processing in background</p>
             <p className="text-xs text-blue-100/70">
               {runningTasks[0].message || "You can switch features safely."}
             </p>
           </div>
+            {typeof runningTasks[0].progress === "number" && (
+              <span className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-black text-blue-200">
+                {Math.round(runningTasks[0].progress)}%
+              </span>
+            )}
+          </div>
+          {typeof runningTasks[0].progress === "number" && (
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300 transition-all duration-500"
+                style={{ width: `${Math.min(Math.max(runningTasks[0].progress, 0), 100)}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 
