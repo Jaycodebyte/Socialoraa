@@ -57,6 +57,62 @@ const getLinkedInPublishError = (response, data) => {
   return message || `LinkedIn rejected the post with status ${response.status}.`;
 };
 
+const buildLinkedInResult = (response, data = {}) => {
+  const postUrn = response.headers.get("x-restli-id") || data.id || "";
+  return {
+    ok: true,
+    platformPostId: postUrn,
+    url: postUrn ? `https://www.linkedin.com/feed/update/${encodeURIComponent(postUrn)}/` : null,
+  };
+};
+
+const publishLinkedInViaUgc = async ({ accessToken, accountId, title, body, mediaUrl }) => {
+  const commentary = [textFromBody(title, body), mediaUrl ? `\n${mediaUrl}` : ""]
+    .join("")
+    .trim();
+  if (!commentary) {
+    throw new Error("LinkedIn post needs text.");
+  }
+
+  const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Restli-Protocol-Version": "2.0.0",
+    },
+    body: JSON.stringify({
+      author: `urn:li:person:${accountId}`,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: {
+            text: commentary,
+          },
+          shareMediaCategory: "NONE",
+        },
+      },
+      visibility: {
+        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+      },
+    }),
+  });
+  const data = await getJson(response);
+
+  if (!response.ok) {
+    const invalidToken = isLinkedInInvalidToken(response, data);
+    return {
+      ok: false,
+      status: response.status,
+      needsReconnect: invalidToken,
+      error: getLinkedInPublishError(response, data),
+      details: data,
+    };
+  }
+
+  return buildLinkedInResult(response, data);
+};
+
 const publishFacebook = async ({ accessToken, accountId, title, body, mediaUrl, mediaType }) => {
   const message = textFromBody(title, body);
   if (!message && !mediaUrl) {
@@ -218,6 +274,17 @@ const publishLinkedIn = async ({ accessToken, accountId, title, body, mediaUrl }
   });
   const data = await getJson(response);
   if (!response.ok) {
+    if (response.status === 403) {
+      const fallbackResult = await publishLinkedInViaUgc({
+        accessToken,
+        accountId,
+        title,
+        body,
+        mediaUrl,
+      });
+      if (fallbackResult.ok) return fallbackResult;
+    }
+
     const invalidToken = isLinkedInInvalidToken(response, data);
     return {
       ok: false,
@@ -228,12 +295,7 @@ const publishLinkedIn = async ({ accessToken, accountId, title, body, mediaUrl }
     };
   }
 
-  const postUrn = response.headers.get("x-restli-id") || data.id || "";
-  return {
-    ok: true,
-    platformPostId: postUrn,
-    url: postUrn ? `https://www.linkedin.com/feed/update/${encodeURIComponent(postUrn)}/` : null,
-  };
+  return buildLinkedInResult(response, data);
 };
 
 export async function POST(request) {
