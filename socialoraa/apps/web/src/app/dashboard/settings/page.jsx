@@ -73,8 +73,7 @@ const platforms = [
     oauthProvider: "linkedin_oidc",
     icon: Linkedin,
     color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    scope: "openid profile email",
-    publishingScope: "w_member_social",
+    scope: "openid profile email w_member_social",
     proof:
       "Connect with LinkedIn. The signed-in member or organization admin grants posting access.",
   },
@@ -468,7 +467,6 @@ export default function Settings() {
         scopes: config?.scope || null,
         accountMetadata: {
           oauthProvider: config?.oauthProvider,
-          publishingScope: config?.publishingScope || null,
           ...(verifiedAccount.accountMetadata || {}),
           savedAt: new Date().toISOString(),
         },
