@@ -390,12 +390,18 @@ export default function Scheduler() {
       setDraftNotice("Loaded latest generated post from Post Generator");
     };
 
-    applyDraft(readSchedulerDraft());
+    const applyLatestDraft = () => applyDraft(readSchedulerDraft());
+    applyLatestDraft();
+
+    const frameId = window.requestAnimationFrame(applyLatestDraft);
 
     const onDraftUpdated = (event) => applyDraft(event.detail);
     window.addEventListener("scheduler-draft-updated", onDraftUpdated);
-    return () => window.removeEventListener("scheduler-draft-updated", onDraftUpdated);
-  }, [setDraftNotice, setPlatform, setPostBody, setTitle]);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scheduler-draft-updated", onDraftUpdated);
+    };
+  }, [setDraftNotice, setPlatform, setPostBody, setTitle, userStateKey]);
 
   const { data: content = [] } = useQuery({
     queryKey: ["scheduler-content", user?.id],

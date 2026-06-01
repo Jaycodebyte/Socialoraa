@@ -25,6 +25,7 @@ export const saveSchedulerDraft = (draft) => {
   };
 
   window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+  window.localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
   window.dispatchEvent(new CustomEvent("scheduler-draft-updated", { detail: payload }));
 };
 
@@ -32,7 +33,9 @@ export const readSchedulerDraft = () => {
   if (typeof window === "undefined") return null;
 
   try {
-    const value = window.sessionStorage.getItem(DRAFT_KEY);
+    const value =
+      window.sessionStorage.getItem(DRAFT_KEY) ||
+      window.localStorage.getItem(DRAFT_KEY);
     return value ? JSON.parse(value) : null;
   } catch {
     return null;
@@ -42,4 +45,5 @@ export const readSchedulerDraft = () => {
 export const clearSchedulerDraft = () => {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(DRAFT_KEY);
+  window.localStorage.removeItem(DRAFT_KEY);
 };
