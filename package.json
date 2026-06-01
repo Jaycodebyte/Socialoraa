@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix anything/apps/web run dev",
+    "typecheck": "npm --prefix anything/apps/web run typecheck"
+  }
+}
