@@ -14,6 +14,7 @@ import {
   Music2,
   ExternalLink,
   Gauge,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -72,6 +73,73 @@ const GeneratingPreview = ({ count }) => (
   </div>
 );
 
+const PROCESSING_STAGES = [
+  { at: 8, label: "Preparing source", detail: "Reading your video and settings." },
+  { at: 22, label: "Analyzing timeline", detail: "Finding strong short-form moments." },
+  { at: 42, label: "Framing clips", detail: "Optimizing vertical composition." },
+  { at: 62, label: "Adding captions", detail: "Applying caption style and timing." },
+  { at: 78, label: "Rendering exports", detail: "Creating polished 9:16 MP4 clips." },
+  { at: 92, label: "Final quality pass", detail: "Sharpening, compressing, and packaging." },
+];
+
+const getProcessingStage = (progress) =>
+  [...PROCESSING_STAGES].reverse().find((stage) => progress >= stage.at) ||
+  PROCESSING_STAGES[0];
+
+const ProcessingProgress = ({ progress, count, quality }) => {
+  const stage = getProcessingStage(progress);
+  const safeProgress = Math.min(Math.max(Math.round(progress), 0), 100);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="relative overflow-hidden rounded-3xl border border-yellow-300/20 bg-[#090A12] p-5 shadow-2xl shadow-yellow-950/20 sm:p-6"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(250,204,21,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.18),transparent_38%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-yellow-200/70 to-transparent" />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.22em] text-yellow-200">
+            <Sparkles size={16} className="text-yellow-300" />
+            Processing
+          </div>
+          <p className="text-xl font-black text-white">{stage.label}</p>
+          <p className="mt-1 text-sm text-gray-400">{stage.detail}</p>
+        </div>
+        <div className="rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-right">
+          <p className="text-2xl font-black tabular-nums text-yellow-200">{safeProgress}%</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-100/50">
+            complete
+          </p>
+        </div>
+      </div>
+
+      <div className="relative mt-6">
+        <div className="rounded-full border-2 border-white bg-black p-1 shadow-inner shadow-black">
+          <div className="relative h-7 overflow-hidden rounded-full bg-white/5">
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500"
+              initial={{ width: "0%" }}
+              animate={{ width: `${safeProgress}%` }}
+              transition={{ type: "spring", stiffness: 90, damping: 18 }}
+            >
+              <div className="absolute inset-0 animate-[progress-stripes_0.9s_linear_infinite] bg-[linear-gradient(110deg,rgba(255,255,255,0.18)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.18)_50%,rgba(255,255,255,0.18)_75%,transparent_75%,transparent)] bg-[length:28px_28px]" />
+              <div className="absolute inset-y-0 right-0 w-8 bg-white/35 blur-md" />
+            </motion.div>
+            <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/20" />
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs font-semibold text-gray-500">
+          <span>{count} {count === 1 ? "short" : "shorts"} queued</span>
+          <span className="capitalize">{quality} quality</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const qualityNoticeMessage =
   "Sorry, video quality may not be perfect right now. We are working to enhance the Video to Shorts output quality. Please stay tuned.";
 
@@ -102,9 +170,41 @@ export default function VideoShorts() {
     "balanced",
   );
   const [result, setResult] = useUserPersistentState(userStateKey, "video-shorts:result", null);
+  const [processingProgress, setProcessingProgress] = useState(0);
   const { task: videoTask, runTask, clearTask } = useBackgroundTask("video-shorts");
   const processing = videoTask.status === "running";
   const displayResult = videoTask.result || result;
+  const visibleClipCount = generationMode === "auto" ? clipCount : 1;
+
+  useEffect(() => {
+    if (!processing) {
+      if (videoTask.status === "success") {
+        setProcessingProgress(100);
+        const timer = window.setTimeout(() => setProcessingProgress(0), 1400);
+        return () => window.clearTimeout(timer);
+      }
+      if (videoTask.status === "error" || videoTask.status === "idle") {
+        setProcessingProgress(0);
+      }
+      return;
+    }
+
+    setProcessingProgress((current) => Math.max(current, 8));
+    const timer = window.setInterval(() => {
+      setProcessingProgress((current) => {
+        if (current >= 94) return current;
+        const nextStep =
+          current < 25 ? 4 :
+          current < 55 ? 3 :
+          current < 78 ? 2 :
+          current < 90 ? 1 :
+          0.35;
+        return Math.min(current + nextStep, 94);
+      });
+    }, 900);
+
+    return () => window.clearInterval(timer);
+  }, [processing, videoTask.status]);
 
   const persistShortsResult = useCallback(
     async (shortsResult) => {
@@ -220,6 +320,7 @@ export default function VideoShorts() {
     const usage = checkUsageLimit(user, "videoShorts", clipCount);
     if (!usage.allowed) return toast.error(usage.message);
 
+    setProcessingProgress(8);
     runTask(async () => {
       let response;
       if (sourceType === "upload" || musicFile) {
@@ -269,6 +370,7 @@ export default function VideoShorts() {
       if (!response.ok) {
         throw new Error(data.error || "Unable to create shorts");
       }
+      setProcessingProgress(100);
       recordUsage(user, "videoShorts", data.clips?.length || clipCount);
       toast.success("Video converted to shorts!");
       return data;
@@ -822,7 +924,7 @@ export default function VideoShorts() {
               </div>
             </div>
 
-            <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-4">
               <button
                 onClick={handleConvert}
                 disabled={
@@ -842,6 +944,14 @@ export default function VideoShorts() {
 
             </div>
           </div>
+
+          {processing && (
+            <ProcessingProgress
+              progress={processingProgress}
+              count={visibleClipCount}
+              quality={renderQuality}
+            />
+          )}
 
           {displayResult && (
             <motion.div
@@ -878,7 +988,7 @@ export default function VideoShorts() {
           )}
 
           {processing && !displayResult && (
-            <GeneratingPreview count={generationMode === "auto" ? clipCount : 1} />
+            <GeneratingPreview count={visibleClipCount} />
           )}
         </div>
       </div>
@@ -887,6 +997,11 @@ export default function VideoShorts() {
         @keyframes video-shimmer {
           100% {
             transform: translateX(100%);
+          }
+        }
+        @keyframes progress-stripes {
+          100% {
+            background-position: 28px 0;
           }
         }
       `}</style>
